@@ -20,21 +20,11 @@ class Parser:
         # time.sleep(10)
         # time.sleep(5)
         fieldset = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, xpath)))
-        print(fieldset.text)
+
+        # print(fieldset.text)
         # time.sleep(1000)
-        # return []
-        div_container = fieldset.find_element(by=By.TAG_NAME, value='div')
-        # divs = driver.find_elements(by=By.TAG_NAME, value='div')
-        print(div_container.text)
-        return []
-        divs = div_container.find_elements(by=By.TAG_NAME, value='div')
-        sizes: list[str] = []
-        for div in divs:
-            size = div.find_element(by=By.TAG_NAME, value='label').text
-            disabled = div.find_element(by=By.TAG_NAME, value='input').get_attribute('disabled')
-            if disabled is None:
-                sizes.append(size)
-        return sizes
+        text: str = fieldset.text
+        return text.split('\n')
 
     @staticmethod
     def _parse_photo(url: str) -> Image:
@@ -54,13 +44,18 @@ class Parser:
 
     @staticmethod
     def _parse_photos(driver: Chrome, xpath: str) -> list[Image]:
-        photos = driver.find_elements(by=By.TAG_NAME, value='img')
+
+        container = driver.find_element(by=By.XPATH, value=xpath)
+        photos = container.find_elements(by=By.TAG_NAME, value='img')
+        # photos = driver.find_elements(by=By.TAG_NAME, value='img')
+
         images = []
         for i in photos:
             url = i.get_attribute('src')
             if url is not None and url.startswith('https://static.nike.com/'):
                 images.append(Parser._parse_photo(url))
         return images
+
     @staticmethod
     def _cookies(driver: Chrome, xpath: str) -> None:
         try:
@@ -69,6 +64,7 @@ class Parser:
             button.click()
         except Exception as e:
             print('No need to work with cookies')
+
     @staticmethod
     def _parse_name(driver: Chrome, xpath: str) -> str:
         name = driver.find_element(by=By.XPATH, value=xpath).text
@@ -89,8 +85,9 @@ class Parser:
             button.click()
         except Exception as e:
             print('No need to work with country')
+
     @staticmethod
-    def parse_shoes(url: str, xpath: dict) -> None:
+    def parse_items(url: str, xpath: dict) -> None:
         opts = ChromeOptions()
         # opts.headless = True
         driver = Chrome(service=Parser.serv, options=opts)
@@ -102,13 +99,15 @@ class Parser:
         time.sleep(25)
         name = Parser._parse_name(driver=driver, xpath=xpath['name'])
         price = Parser._parse_price(driver=driver, xpath=xpath['price'])
-        images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
-        try:
-            for i in images:
-                i.show()
-        except Exception as e:
-            print(e)
+        # images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
+        # try:
+        #     for i in images:
+        #         i.show()
+        # except Exception as e:
+        #     print(e)
         sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
+        print(sizes)
+        driver.close()
 
 
 p = Parser()
@@ -125,7 +124,7 @@ p = Parser()
 # }
 
 xpath_nike = {
-    'photos': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[1]""",
+    'photos': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[2]""",
     'size': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset/div""",
     'accept': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[1]""",
     'decline': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[2]""",
@@ -137,7 +136,9 @@ xpath_nike = {
 
 # p.parse_shoes(url='https://www.nike.com/t/free-metcon-5-mens-training-shoes-Vfsbpq/DV3949-700', xpath=xpath_nike)
 
-p.parse_shoes(url='https://www.nike.com/t/air-zoom-flight-95-mens-shoes-zc42bP/DX5505-100', xpath=xpath_nike)
+p.parse_items(url='https://www.nike.com/t/air-zoom-flight-95-mens-shoes-zc42bP/DX5505-100', xpath=xpath_nike)
+
+# photo 1 /html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[2]
 
 # /html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset/div
 # /html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset/div/div[1]
