@@ -109,6 +109,25 @@ class Parser:
         print(sizes)
         driver.close()
 
+    @staticmethod
+    def parse_item_grid(url: str, xpath: dict) -> None:
+        opts = ChromeOptions()
+        # opts.headless = True
+        driver = Chrome(service=Parser.serv, options=opts)
+        driver.get(url)
+        driver.maximize_window()
+        Parser._country(driver=driver, xpath=xpath['country'])
+        Parser._cookies(driver=driver, xpath=xpath['accept'])
+        time.sleep(25)
+        divs = driver.find_elements(by=By.CLASS_NAME, value='product-card')
+        for i in divs:
+            link = i.find_element(by=By.TAG_NAME, value='a')
+            print(link.get_attribute('href'))
+        # grid = driver.find_element(by=By.XPATH, value=xpath_nike['grid'])
+        # links = grid.find_elements(by=By.TAG_NAME, value='a')
+        # for i in links:
+        #     print(i.get_attribute('href'))
+
 
 p = Parser()
 # xpath_photos = {
@@ -131,12 +150,15 @@ xpath_nike = {
     'name': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div/div[2]/div/h1""",
     'price': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div
     /div[2]/div/div/div/div/div""",
-    'country': """/html/body/div[6]/div/div/nav/button"""
+    'country': """/html/body/div[6]/div/div/nav/button""",
+    'grid':  """/html/body/div[4]/div/div/div[2]/div[4]/div/div[5]/div[2]"""
 }
 
 # p.parse_shoes(url='https://www.nike.com/t/free-metcon-5-mens-training-shoes-Vfsbpq/DV3949-700', xpath=xpath_nike)
 
-p.parse_items(url='https://www.nike.com/t/air-zoom-flight-95-mens-shoes-zc42bP/DX5505-100', xpath=xpath_nike)
+# p.parse_items(url='https://www.nike.com/t/air-zoom-flight-95-mens-shoes-zc42bP/DX5505-100', xpath=xpath_nike)
+
+p.parse_item_grid(url='https://www.nike.com/w/mens-shoes-nik1zy7ok', xpath=xpath_nike)
 
 # photo 1 /html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[2]
 
