@@ -34,9 +34,12 @@ class ShopXPATH(models.Model):
     price: models.TextField(verbose_name=_('Price'))
     country: models.TextField(verbose_name=_('Country'))
 
+    cookies_accept_2: models.TextField(verbose_name=_('Accept cookies 2'))
+    cookies_decline_2: models.TextField(verbose_name=_('Decline cookies 2'))
+
 
 class ItemSize(models.Model):
-    size = models.CharField(max_length=20, verbose_name=_('Size'))
+    size = models.CharField(max_length=30, verbose_name=_('Size'))
 
 
 class ItemPhoto(models.Model):

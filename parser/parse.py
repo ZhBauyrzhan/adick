@@ -88,15 +88,13 @@ class Parser:
 
     @staticmethod
     def parse_items(url: str, xpath: dict) -> None:
-        opts = ChromeOptions()
-        # opts.headless = True
-        driver = Chrome(service=Parser.serv, options=opts)
-        driver.get(url)
-        driver.maximize_window()
-        # time.sleep(3000)
+        driver = Parser.setup_driver(url)
+
         Parser._country(driver=driver, xpath=xpath['country'])
         Parser._cookies(driver=driver, xpath=xpath['accept'])
+
         time.sleep(25)
+
         name = Parser._parse_name(driver=driver, xpath=xpath['name'])
         price = Parser._parse_price(driver=driver, xpath=xpath['price'])
         # images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
@@ -111,22 +109,41 @@ class Parser:
 
     @staticmethod
     def parse_item_grid(url: str, xpath: dict) -> None:
+        driver = Parser.setup_driver(url)
+
+        screen_height = screen_height = driver.execute_script("return window.screen.height;")
+
+        Parser._country(driver=driver, xpath=xpath['country2'])
+        Parser._cookies(driver=driver, xpath=xpath['accept2'])
+        time.sleep(25)
+        print(screen_height)
+        links = []
+        for i in range(1, 15):
+
+            Parser.scroll_page(driver, screen_height, i)
+
+            divs = driver.find_elements(by=By.CLASS_NAME, value='product-card')
+            for i in divs:
+                link = i.find_element(by=By.TAG_NAME, value='a')
+                links.append(link.get_attribute('href'))
+                # print(link.get_attribute('href'))
+
+            time.sleep(5)
+        links = list(set(links))
+        # print(links, sep='\n', end='\n')
+
+    @staticmethod
+    def scroll_page(driver: Chrome, screen_height, i):
+        driver.execute_script("window.scrollTo(0, {screen_height}*{i});".format(screen_height=screen_height, i=i))
+
+    @staticmethod
+    def setup_driver(url: str) -> Chrome:
         opts = ChromeOptions()
         # opts.headless = True
         driver = Chrome(service=Parser.serv, options=opts)
         driver.get(url)
         driver.maximize_window()
-        Parser._country(driver=driver, xpath=xpath['country'])
-        Parser._cookies(driver=driver, xpath=xpath['accept'])
-        time.sleep(25)
-        divs = driver.find_elements(by=By.CLASS_NAME, value='product-card')
-        for i in divs:
-            link = i.find_element(by=By.TAG_NAME, value='a')
-            print(link.get_attribute('href'))
-        # grid = driver.find_element(by=By.XPATH, value=xpath_nike['grid'])
-        # links = grid.find_elements(by=By.TAG_NAME, value='a')
-        # for i in links:
-        #     print(i.get_attribute('href'))
+        return driver
 
 
 p = Parser()
@@ -151,7 +168,9 @@ xpath_nike = {
     'price': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div
     /div[2]/div/div/div/div/div""",
     'country': """/html/body/div[6]/div/div/nav/button""",
-    'grid':  """/html/body/div[4]/div/div/div[2]/div[4]/div/div[5]/div[2]"""
+    'grid': """/html/body/div[4]/div/div/div[2]/div[4]/div/div[5]/div[2]""",
+    'accept2': """/html/body/div[6]/div/div/div/div/div/section/div[2]/div/button[1]""",
+    'country2': """/html/body/div[5]/div/div/nav/button""",
 }
 
 # p.parse_shoes(url='https://www.nike.com/t/free-metcon-5-mens-training-shoes-Vfsbpq/DV3949-700', xpath=xpath_nike)
@@ -172,6 +191,6 @@ p.parse_item_grid(url='https://www.nike.com/w/mens-shoes-nik1zy7ok', xpath=xpath
 
 # star /html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[4]/div/details[2]/summary/div
 # aria-label="4.8"
-
+#        /html/body/div[6]/div/div/div/div/div/section/div[2]/div/button[1]
 # accept /html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[1]
 # decline /html/body/div[7]/div/div/div/div/div/section/div[2]/div/butt on[2]
