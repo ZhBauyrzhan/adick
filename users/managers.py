@@ -4,15 +4,6 @@ from django.contrib.auth.base_user import BaseUserManager
 
 class CustomUserManager(BaseUserManager):
     @staticmethod
-    def _check_fields_for_admin(email: models.EmailField,
-                                first_name: models.CharField,
-                                last_name: models.CharField,
-                                ) -> bool:
-        if not email or not first_name or not last_name:
-            return False
-        return True
-
-    @staticmethod
     def _check_fields(email: models.EmailField,
                       first_name: models.CharField,
                       last_name: models.CharField) -> bool:
