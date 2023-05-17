@@ -11,10 +11,7 @@ import time
 
 
 class Parser:
-    serv = Service('C:/Program Files (x86)/chromedriver.exe')
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'}
-
+    serv  = Service('/usr/bin/chromedriver')
     @staticmethod
     def _parse_size(driver: Chrome, xpath: str) -> list[str]:
         # time.sleep(10)
