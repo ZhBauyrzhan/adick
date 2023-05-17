@@ -1,12 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY requirements.txt .
+RUN python3.11 -m pip install --upgrade pip
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /tmp/requirements.txt
+RUN python3.11 -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY . /proj
 WORKDIR /proj

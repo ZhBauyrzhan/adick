@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from . import managers
 
 
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     email = models.EmailField(unique=True, verbose_name=_("Email"))

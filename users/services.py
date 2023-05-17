@@ -7,13 +7,13 @@ from templated_email import send_templated_mail
 
 from src import settings
 from users import repos
-from .models import User
+from .models import CustomUser
 
 
 class UserServicesInterface(Protocol):
     def create_user(self, data: OrderedDict) -> dict: ...
 
-    def verify_user(self, data: OrderedDict) -> User | None: ...
+    def verify_user(self, data: OrderedDict) -> CustomUser | None: ...
 
     def create_token(self, data: OrderedDict) -> dict: ...
 
@@ -26,7 +26,7 @@ class UserServicesV1:
     def create_user(self, data: OrderedDict) -> dict:
         session_id = self._verify_email(data=data)
 
-    def verify_user(self, data: OrderedDict) -> User | None: ...
+    def verify_user(self, data: OrderedDict) -> CustomUser | None: ...
 
     def create_token(self, data: OrderedDict) -> dict: ...
 
@@ -47,28 +47,28 @@ class UserServicesV1:
 
         return session_id
 
-    # @staticmethod
-    # def _send_letter_to_email(user: User) -> None:
-    #     send_templated_mail(
-    #         template_name='Welcome',
-    #         from_email=settings.EMAIL_HOST_USER,
-    #         recipient_list=[user.email],
-    #         context={
-    #             'email': user.email,
-    #         },
-    #     )
-
     @staticmethod
-    def send_letter_to_email(mail: str, lname: str, fname: str) -> None:
+    def _send_letter_to_email(user: CustomUser) -> None:
         send_templated_mail(
-            template_name='welcome',
+            template_name='Welcome',
             from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[mail],
+            recipient_list=[user.email],
             context={
-                'name': f'{fname, lname}',
-                'email': mail,
+                'email': user.email,
             },
         )
+
+    # @staticmethod
+    # def send_letter_to_email(mail: str, lname: str, fname: str) -> None:
+    #     send_templated_mail(
+    #         template_name='welcome',
+    #         from_email=settings.EMAIL_HOST_USER,
+    #         recipient_list=[mail],
+    #         context={
+    #             'name': f'{fname, lname}',
+    #             'email': mail,
+    #         },
+    #     )
 
     @staticmethod
     def _generate_code(length: int = 6) -> str:
