@@ -5,44 +5,40 @@ from django.contrib.auth.base_user import BaseUserManager
 class CustomUserManager(BaseUserManager):
     @staticmethod
     def _check_fields(email: models.EmailField,
-                      first_name: models.CharField,
-                      last_name: models.CharField) -> bool:
-        if not email or not first_name or not last_name:
+                      username: models.CharField,
+                      password: models.CharField) -> bool:
+        if not email or not username or not password:
             return False
         return True
 
     def create_user(self, email: models.EmailField,
-                    first_name: models.CharField,
-                    last_name: models.CharField
-                    ):
-        if not CustomUserManager._check_fields(email, first_name, last_name):
+                    username: models.CharField,
+                    password: models.CharField):
+        if not CustomUserManager._check_fields(email, username, password):
             raise ValueError('Check fields values')
         user = self.model(
             email=self.normalize_email(email),
-            first_name=first_name,
-            last_name=last_name
+            username=username
         )
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_superuser(self, email: models.EmailField,
-                         first_name: models.CharField,
-                         last_name: models.CharField,
-                         password: str):
+                         username: models.CharField,
+                         password: models.CharField):
 
-        if not CustomUserManager._check_fields_for_admin(email, first_name, last_name):
+        if not CustomUserManager._check_fields(email, username, password):
             raise ValueError('Check fields values')
 
         user = self.model(
             email=self.normalize_email(email),
-            first_name=first_name,
-            last_name=last_name,
+            username=username,
         )
         user.is_staff = True
         user.is_superuser = True
         user.set_password(password)
         user.save()
-
         return user
 
     def active(self):

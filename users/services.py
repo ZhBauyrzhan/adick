@@ -1,80 +1,71 @@
-import random
 import uuid
 from typing import Protocol, OrderedDict
 
-from django.core.cache import cache
 from templated_email import send_templated_mail
 
 from src import settings
 from users import repos
 from .models import CustomUser
+from django.db import transaction
 
 
-class UserServicesInterface(Protocol):
-    def create_user(self, data: OrderedDict) -> dict: ...
+class UserServiceInterface(Protocol):
+    def create_user(self, data: OrderedDict, **kwargs) -> CustomUser: ...
 
-    def verify_user(self, data: OrderedDict) -> CustomUser | None: ...
+    def get_user_by_id(self, user_id: uuid.UUID) -> CustomUser: ...
 
-    def create_token(self, data: OrderedDict) -> dict: ...
+    def get_user_by_username(self, username: str) -> CustomUser: ...
 
-    def verify_token(self, data: OrderedDict) -> dict: ...
+    def get_user_by_email(self, email: str) -> CustomUser: ...
+
+    def get_all_users(self) -> list[CustomUser]: ...
+
+    def update_user(self, user_id: uuid.UUID, **update_fields) -> CustomUser: ...
+
+    def delete_user(self, user_id: uuid.UUID) -> bool: ...
 
 
-class UserServicesV1:
+class UserServiceV1:
     user_repos = repos.UserReposV1()
 
-    def create_user(self, data: OrderedDict) -> dict:
-        session_id = self._verify_email(data=data)
+    def get_user_by_id(self, user_id: uuid.UUID) -> CustomUser:
+        return self.user_repos.get_user_by_id(user_id=user_id)
 
-    def verify_user(self, data: OrderedDict) -> CustomUser | None: ...
+    def get_user_by_username(self, username: str) -> CustomUser:
+        return self.user_repos.get_user_by_username(username)
 
-    def create_token(self, data: OrderedDict) -> dict: ...
+    def get_user_by_email(self, email: str) -> CustomUser:
+        return self.user_repos.get_user_by_email(email)
 
-    def verify_token(self, data: OrderedDict) -> dict: ...
+    def get_all_users(self) -> list[CustomUser]:
+        return self.user_repos.get_all_users()
 
-    def _verify_email(self, data: OrderedDict, is_exists: bool = False) -> str:
-        email = data['email']
-        if is_exists:
-            user = self.user_repos.get_user(data=data)
-            email = str(user.email)
+    @transaction.atomic()
+    def create_user(self, data: OrderedDict) -> CustomUser:
+        user = self.user_repos.create_user(data)
+        self._send_letter_to_email(user=user, template_name='welcome')
+        return user
 
-        code = self._generate_code()
-        session_id = self._generate_session_id()
+    def update_user(self, user_id: uuid.UUID, **update_fields) -> CustomUser:
+        return self.user_repos.update_user(user_id, update_fields)
 
-        cache.set(session_id, {'email': email, 'code': code, **data}, timeout=300)
-
-        # TODO: Write send email code
-
-        return session_id
+    @transaction.atomic()
+    def delete_user(self, user: CustomUser) -> bool:
+        self._send_letter_to_email(user, template_name='delete')
+        res = self.user_repos.delete_user(user.id)
+        return res
 
     @staticmethod
-    def _send_letter_to_email(user: CustomUser) -> None:
+    def _send_letter_to_email(user: CustomUser, template_name: str) -> None:
+        context = {}
+        match template_name:
+            case 'welcome':
+                context = {'username': user.username}
+            case 'delete':
+                context = {'username': user.username}
         send_templated_mail(
-            template_name='Welcome',
+            template_name=template_name,
             from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
-            context={
-                'email': user.email,
-            },
+            context=context,
         )
-
-    # @staticmethod
-    # def send_letter_to_email(mail: str, lname: str, fname: str) -> None:
-    #     send_templated_mail(
-    #         template_name='welcome',
-    #         from_email=settings.EMAIL_HOST_USER,
-    #         recipient_list=[mail],
-    #         context={
-    #             'name': f'{fname, lname}',
-    #             'email': mail,
-    #         },
-    #     )
-
-    @staticmethod
-    def _generate_code(length: int = 6) -> str:
-        numbers = [str(i) for i in range(10)]
-        return ''.join(random.choices(numbers, k=length))
-
-    @staticmethod
-    def _generate_session_id() -> str:
-        return str(uuid.uuid4())

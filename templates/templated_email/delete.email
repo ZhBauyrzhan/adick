@@ -1,0 +1,5 @@
+{% block subject %}Your account was deleted on website Adick{% endblock %}
+{% block plain %}
+  Account used:
+      username: {{name}}
+{% endblock %}

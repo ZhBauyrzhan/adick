@@ -84,41 +84,18 @@ ASGI_APPLICATION = 'src.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
 # DATABASES = {
 #     'default': dj_database_url.config(
-#         env='DB_URL',
-#         default='postgres://postgres:qwerty123@ecommerce-db:5432/postgres',
+#         default=f'postgres://adick:{env("DB_PASSWORD")}@db:5432/postgres',
 #     ),
 # }
 
-#
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'db',
-#         'USER': 'adick',
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': '0.0.0.0',
-#         'PORT': '6543',
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'db',
-#         'USER': 'adick',
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': 'localhost',
-#         'PORT': '6543',
-#     }
-# }
-
-
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f'postgres://adick:{env("DB_PASSWORD")}@db:5432/postgres',
-    ),
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR/'db.db',
+    }
 }
 
 ALLOWED_HOSTS = ['localhost']
