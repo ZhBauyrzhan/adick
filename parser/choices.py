@@ -11,8 +11,7 @@ class ShopChoice(models.TextChoices):
     NIKE = _('nike')
     PUMA = _('puma')
 
-
 class CurrencyChoice(models.TextChoices):
-    USD = _('$'), _('USD')
-    KZT = _('₸'), _('KZT')
-    GBP = _('£'), _('GBP')
+    USD = '$', 'USD'
+    KZT = '₸', 'KZT'
+    GBP = '£', 'GBP'

@@ -1,8 +1,6 @@
-from django.urls import path, include
-from rest_framework_simplejwt.views import TokenRefreshView
+from django.urls import path
 
 from users import views
-
 
 urlpatterns = [
     path('users/create/', views.UserViewSet.as_view({'post': 'create'})),

@@ -1,6 +1,10 @@
+import uuid
+from _decimal import Decimal
+from io import BytesIO
+
 from PIL import Image
 import requests
-
+from django.core.files.base import ContentFile
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -8,10 +12,13 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import time
+from parser.models import Item, ItemPhoto, ItemSize, Shop
+from django.db import transaction
 
 
 class Parser:
-    serv  = Service('/usr/bin/chromedriver')
+    serv = Service('/usr/bin/chromedriver')
+
     @staticmethod
     def _parse_size(driver: Chrome, xpath: str) -> list[str]:
         # time.sleep(10)
@@ -25,26 +32,16 @@ class Parser:
 
     @staticmethod
     def _parse_photo(url: str) -> Image:
-        with requests.get(url, headers=Parser.headers, stream=True).raw as raw_image:
+        # print(f'!!!!!!URL = {url}')
+        with requests.get(url, stream=True).raw as raw_image:
             return Image.open(raw_image)
-
-    # @staticmethod
-    # def _parse_photos(driver: Chrome, xpath: str) -> list[Image]:
-    #     photos = driver.find_element(by=By.XPATH, value=xpath)
-    #     img = photos.find_elements(by=By.TAG_NAME, value='img')
-    #     images = []
-    #     for i in img:
-    #         image = Parser._parse_photo(i.get_attribute('src'))
-    #         images.append(image)
-    #         # image.show()
-    #     return images
 
     @staticmethod
     def _parse_photos(driver: Chrome, xpath: str) -> list[Image]:
-
+        # print('WAS')
         container = driver.find_element(by=By.XPATH, value=xpath)
+        # print(container.text)
         photos = container.find_elements(by=By.TAG_NAME, value='img')
-        # photos = driver.find_elements(by=By.TAG_NAME, value='img')
 
         images = []
         for i in photos:
@@ -84,28 +81,60 @@ class Parser:
             print('No need to work with country')
 
     @staticmethod
-    def parse_items(url: str, xpath: dict) -> None:
-        driver = Parser.setup_driver(url)
+    @transaction.atomic
+    def _save_item(url: str, title: str, currency: str, price: Decimal,
+                   images: list, sizes: list[str], shop: Shop):
+        item = Item(title=title, price=price, currency=currency, shop=shop, url=url)
+        item.save()
+        validated_sizes = Parser._validate_sizes(sizes)
+        item.size.add(*validated_sizes)
 
-        Parser._country(driver=driver, xpath=xpath['country'])
-        Parser._cookies(driver=driver, xpath=xpath['accept'])
-
-        time.sleep(25)
-
-        name = Parser._parse_name(driver=driver, xpath=xpath['name'])
-        price = Parser._parse_price(driver=driver, xpath=xpath['price'])
-        # images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
-        # try:
-        #     for i in images:
-        #         i.show()
-        # except Exception as e:
-        #     print(e)
-        sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
-        print(sizes)
-        driver.close()
+        for i in images:
+            image = ItemPhoto(item=item, is_main=(i == images[0]))
+            image_buffer = BytesIO()
+            i.save(image_buffer, format='PNG')
+            name = str(uuid.uuid4()) + '.png'
+            image.photo.save(name, ContentFile(image_buffer.getvalue()), save=True)
+            image.save()
 
     @staticmethod
-    def parse_item_grid(url: str, xpath: dict) -> None:
+    def parse_items(url: str, xpath: dict, shop: Shop) -> None:
+
+        with Parser.setup_driver(url) as driver:
+            Parser._country(driver=driver, xpath=xpath['country'])
+            Parser._cookies(driver=driver, xpath=xpath['accept'])
+
+            time.sleep(25)
+
+            title = Parser._parse_name(driver=driver, xpath=xpath['name'])
+            price_with_currency = Parser._parse_price(driver=driver, xpath=xpath['price'])
+            currency = price_with_currency[0]
+            price = Decimal(price_with_currency[1:])
+
+            images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
+            # try:
+            #     for i in images:
+            #         i.show()
+            # except Exception as e:
+            #     print(e)
+            sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
+            Parser._save_item(url, title, currency, price, images, sizes, shop)
+
+    @staticmethod
+    def _validate_sizes(sizes):
+        validated_sizes = []
+        for i in sizes:
+            if not ItemSize.objects.filter(size=i).exists():
+                item_size = ItemSize(size=i)
+                item_size.save()
+                validated_sizes.append(item_size.id)
+            else:
+                item_size = ItemSize.objects.filter(size=i).first()
+                validated_sizes.append(item_size.id)
+        return validated_sizes
+
+    @staticmethod
+    def parse_item_grid(url: str, xpath: dict) -> list[str]:
         driver = Parser.setup_driver(url)
 
         screen_height = screen_height = driver.execute_script("return window.screen.height;")
@@ -115,19 +144,18 @@ class Parser:
         time.sleep(25)
         print(screen_height)
         links = []
+        # TODO: change for -> while when run in sever
         for i in range(1, 15):
-
             Parser.scroll_page(driver, screen_height, i)
-
             divs = driver.find_elements(by=By.CLASS_NAME, value='product-card')
             for i in divs:
                 link = i.find_element(by=By.TAG_NAME, value='a')
                 links.append(link.get_attribute('href'))
                 # print(link.get_attribute('href'))
-
             time.sleep(5)
         links = list(set(links))
-        # print(links, sep='\n', end='\n')
+        print(links, sep='\n', end='\n')
+        return links
 
     @staticmethod
     def scroll_page(driver: Chrome, screen_height, i):
@@ -142,39 +170,29 @@ class Parser:
         driver.maximize_window()
         return driver
 
-
-p = Parser()
-# xpath_photos = {
-#     'nike': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[1]"""
+# p = Parser()
+#
+# xpath_nike = {
+#     'photos': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[2]""",
+#     'size': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset/div""",
+#     'accept': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[1]""",
+#     'decline': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[2]""",
+#     'name': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div/div[2]/div/h1""",
+#     'price': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div
+#     /div[2]/div/div/div/div/div""",
+#     'country': """/html/body/div[6]/div/div/nav/button""",
+#     'grid': """/html/body/div[4]/div/div/div[2]/div[4]/div/div[5]/div[2]""",
+#     'accept2': """/html/body/div[6]/div/div/div/div/div/section/div[2]/div/button[1]""",
+#     'country2': """/html/body/div[5]/div/div/nav/button""",
 # }
-# p.parse_photos(url='https://www.nike.com/t/free-metcon-5-mens-training-shoes-Vfsbpq/DV3949-700', xpath=xpath_photos['nike'])
-# xpath_size = {
-#     'nike': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset"""
-# }
-# xpath_cookies = {
-#     'nike-accept': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[1]""",
-#     'nike-decline': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[2]""",
-# }
-
-xpath_nike = {
-    'photos': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[2]""",
-    'size': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset/div""",
-    'accept': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[1]""",
-    'decline': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[2]""",
-    'name': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div/div[2]/div/h1""",
-    'price': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[1]/div
-    /div[2]/div/div/div/div/div""",
-    'country': """/html/body/div[6]/div/div/nav/button""",
-    'grid': """/html/body/div[4]/div/div/div[2]/div[4]/div/div[5]/div[2]""",
-    'accept2': """/html/body/div[6]/div/div/div/div/div/section/div[2]/div/button[1]""",
-    'country2': """/html/body/div[5]/div/div/nav/button""",
-}
 
 # p.parse_shoes(url='https://www.nike.com/t/free-metcon-5-mens-training-shoes-Vfsbpq/DV3949-700', xpath=xpath_nike)
 
 # p.parse_items(url='https://www.nike.com/t/air-zoom-flight-95-mens-shoes-zc42bP/DX5505-100', xpath=xpath_nike)
 
-p.parse_item_grid(url='https://www.nike.com/w/mens-shoes-nik1zy7ok', xpath=xpath_nike)
+# links = p.parse_item_grid(url='https://www.nike.com/w/mens-shoes-nik1zy7ok', xpath=xpath_nike)
+# for link in links:
+#     p.parse_items()
 
 # photo 1 /html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div/div[2]
 

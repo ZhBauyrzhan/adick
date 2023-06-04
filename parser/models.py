@@ -1,5 +1,5 @@
 from django.db import models
-from .choices import ShopChoice
+from .choices import ShopChoice, CurrencyChoice
 from django.utils.translation import gettext_lazy as _
 
 
@@ -7,12 +7,12 @@ from django.utils.translation import gettext_lazy as _
 class Item(models.Model):
     title = models.CharField(max_length=60, verbose_name=_('Title'))
     price = models.DecimalField(verbose_name=_('Price'), max_digits=9, decimal_places=2)
-
+    currency = models.CharField(max_length=5, choices=CurrencyChoice.choices, blank=True)
     shop = models.ForeignKey(to='Shop', verbose_name=_('Shop'), on_delete=models.PROTECT)
 
-    url = models.TextField(verbose_name=_('URL'))
+    url = models.TextField(unique=True, verbose_name=_('URL'))
 
-    size = models.ForeignKey(to='ItemSize', on_delete=models.PROTECT)
+    size = models.ManyToManyField(to='ItemSize')
 
     class Meta:
         verbose_name = _('Shoes')
@@ -39,10 +39,10 @@ class ShopXPATH(models.Model):
 
 
 class ItemSize(models.Model):
-    size = models.CharField(max_length=30, verbose_name=_('Size'))
+    size = models.CharField(max_length=30, verbose_name=_('Size'), unique=True)
 
 
 class ItemPhoto(models.Model):
-    photo = models.ImageField(verbose_name=_('Item image'), null=True, blank=True)
+    photo = models.ImageField(verbose_name=_('Item image'), null=True, blank=True, upload_to="items/%Y/%m/%d/")
     item = models.ForeignKey(to='Item', verbose_name=_('Item'), related_name=_('item'), on_delete=models.CASCADE)
     is_main = models.BooleanField(verbose_name=_('Is main photo?'), default=False)
