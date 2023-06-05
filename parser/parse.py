@@ -101,25 +101,25 @@ class Parser:
     def parse_items(url: str, xpath: dict, shop: Shop) -> None:
 
         with Parser.setup_driver(url) as driver:
-            Parser._country(driver=driver, xpath=xpath['country'])
-            Parser._cookies(driver=driver, xpath=xpath['accept'])
+            try:
+                Parser._country(driver=driver, xpath=xpath['country'])
+                Parser._cookies(driver=driver, xpath=xpath['accept'])
+                time.sleep(20)
+                title = Parser._parse_name(driver=driver, xpath=xpath['name'])
+                price_with_currency = Parser._parse_price(driver=driver, xpath=xpath['price'])
+                currency = price_with_currency[0]
+                price = Decimal(price_with_currency[1:])
 
-            time.sleep(25)
-
-            title = Parser._parse_name(driver=driver, xpath=xpath['name'])
-            price_with_currency = Parser._parse_price(driver=driver, xpath=xpath['price'])
-            currency = price_with_currency[0]
-            price = Decimal(price_with_currency[1:])
-
-            images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
-            # try:
-            #     for i in images:
-            #         i.show()
-            # except Exception as e:
-            #     print(e)
-            sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
-            Parser._save_item(url, title, currency, price, images, sizes, shop)
-
+                images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
+                # try:
+                #     for i in images:
+                #         i.show()
+                # except Exception as e:
+                #     print(e)
+                sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
+                Parser._save_item(url, title, currency, price, images, sizes, shop)
+            except Exception as e:
+                print(e, url)
     @staticmethod
     def _validate_sizes(sizes):
         validated_sizes = []
@@ -133,29 +133,57 @@ class Parser:
                 validated_sizes.append(item_size.id)
         return validated_sizes
 
+
     @staticmethod
-    def parse_item_grid(url: str, xpath: dict) -> list[str]:
-        driver = Parser.setup_driver(url)
+    def _get_grid_links(url: str, xpath: dict) -> list:
+        with Parser.setup_driver(url) as driver:
+            screen_height = screen_height = driver.execute_script("return window.screen.height;")
 
-        screen_height = screen_height = driver.execute_script("return window.screen.height;")
+            Parser._country(driver=driver, xpath=xpath['country2'])
+            Parser._cookies(driver=driver, xpath=xpath['accept2'])
+            time.sleep(25)
+            # print(screen_height)
+            items = []
+            # TODO: change for -> while when run in sever
+            for i in range(1, 2):
+                Parser.scroll_page(driver, screen_height, i)
+                divs = driver.find_elements(by=By.CLASS_NAME, value='product-card')
+                for i in divs:
+                    text = i.text.split('\n')
+                    price_with_currency = text[-1]
+                    price = Decimal(price_with_currency[1:])
+                    currency = price_with_currency[0]
 
-        Parser._country(driver=driver, xpath=xpath['country2'])
-        Parser._cookies(driver=driver, xpath=xpath['accept2'])
-        time.sleep(25)
-        print(screen_height)
-        links = []
-        # TODO: change for -> while when run in sever
-        for i in range(1, 15):
-            Parser.scroll_page(driver, screen_height, i)
-            divs = driver.find_elements(by=By.CLASS_NAME, value='product-card')
-            for i in divs:
-                link = i.find_element(by=By.TAG_NAME, value='a')
-                links.append(link.get_attribute('href'))
-                # print(link.get_attribute('href'))
-            time.sleep(5)
-        links = list(set(links))
-        print(links, sep='\n', end='\n')
-        return links
+                    link = i.find_element(by=By.TAG_NAME, value='a').get_attribute('href')
+                    items.append(
+                        (
+                            link,
+                            price,
+                            currency
+                        )
+                    )
+                    # print(link.get_attribute('href'))
+                time.sleep(5)
+            items = list(set(items))
+            return items
+    @staticmethod
+    def parse_item_grid(url: str, xpath: dict, shop: Shop):
+        items = Parser._get_grid_links(url, xpath)
+        # print(links)
+        cnt = 0
+        for item in items:
+            item_url = item[0]
+            price = item[1]
+            currency = item[2]
+            if not Item.objects.filter(url=item_url).exists():
+                Parser.parse_items(url=item_url, xpath=xpath, shop=shop)
+            elif Item.objects.get(url=item_url).price.compare(price) != 0 and Item.objects.get(url=item_url).currency == currency:
+                item_db = Item.objects.get(url=item_url)
+                item_db.price = price
+                item_db.save()
+            if cnt == 1:
+                break
+            cnt += 1
 
     @staticmethod
     def scroll_page(driver: Chrome, screen_height, i):

@@ -42,18 +42,18 @@ class ParserView(ViewSet):
 
         self.parser.parse_items(url, xpath=self.xpath_nike, shop=shop)
         return Response(status=status.HTTP_200_OK)
-    # def parse_grid(self, request, *args, **kwargs):
-    #     serializer = serializers.ParserSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #
-    #     url = serializer.validated_data['url']
-    #     shop = serializer.validated_data['shop']
-    #
-    #
-    #     self.parser.parse_item_grid(url)
-    #
-    #     return Response(status=status.HTTP_200_OK)
 
+    def parse_grid(self, request, *args, **kwargs):
+        serializer = serializers.ParserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        url = serializer.validated_data['url']
+        shop_name = serializer.validated_data['shop']
+
+        shop = get_object_or_404(Shop, name=shop_name)
+
+        self.parser.parse_item_grid(url, xpath=self.xpath_nike, shop=shop)
+        return Response(status=status.HTTP_200_OK)
     # def get_permissions(self):
     #     permission_classes = []
     #     if self.action == 'parse_grid' or self.action == 'parse_item':
