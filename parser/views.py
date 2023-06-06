@@ -5,13 +5,21 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import ViewSet, ModelViewSet
 from . import serializers
 from .parse import Parser
-from .models import Shop
+from .models import Shop, ShopXPATH
 
 from rest_framework.generics import get_object_or_404
+
 
 class ShopView(ModelViewSet):
     serializer_class = serializers.ShopSerializer
     queryset = Shop.objects.all()
+    permission_classes = IsAdminUser,
+
+
+class ShopXPATH(ModelViewSet):
+    serializer_class = serializers.ShopXPATHSerializer
+    queryset = ShopXPATH.objects.all()
+    permission_classes = IsAdminUser,
 
 
 class ParserView(ViewSet):

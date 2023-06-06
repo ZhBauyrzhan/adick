@@ -4,7 +4,7 @@ from parser import views
 
 router = routers.DefaultRouter()
 router.register(r'shops', views.ShopView)
-
+router.register(r'shops-xpath', views.ShopXPATH)
 
 urlpatterns = [
     # path('parser/shop/create/'),

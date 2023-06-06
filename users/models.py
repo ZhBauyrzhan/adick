@@ -4,13 +4,14 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext as _
 from . import managers
+from parser.models import Item
 
 
 class CustomUser(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     email = models.EmailField(unique=True, verbose_name=_("Email"))
-    username = models.CharField(unique=False,max_length=25, verbose_name=_('Username'))
+    username = models.CharField(unique=False, max_length=25, verbose_name=_('Username'))
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ['username', 'password']
@@ -23,3 +24,14 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.email=} {self.username=}"
+
+
+class UserItems(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
+    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name=('ui_user'))
+    item = models.ForeignKey(to=Item, on_delete=models.CASCADE, related_name=('ui_item'))
+
+    last_price = models.DateTimeField()
+
+    created_at = models.DateTimeField(auto_now_add=True)

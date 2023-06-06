@@ -19,13 +19,7 @@ class Item(models.Model):
         verbose_name_plural = _('Shoes')
 
 
-class Shop(models.Model):
-    name = models.CharField(max_length=60, verbose_name=_('Shop name'), choices=ShopChoice.choices)
-    url = models.TextField(verbose_name=_('URL'))
-
-
 class ShopXPATH(models.Model):
-    shop = models.OneToOneField(to='Shop', on_delete=models.CASCADE)
     photos: models.TextField(verbose_name=_('Photo'))
     size: models.TextField(verbose_name=_('Size'))
     cookies_accept: models.TextField(verbose_name=_('Accept cookies'))
@@ -33,9 +27,14 @@ class ShopXPATH(models.Model):
     item_name: models.TextField(verbose_name=_('Item name'))
     price: models.TextField(verbose_name=_('Price'))
     country: models.TextField(verbose_name=_('Country'))
-
+    grid: models.TextField(verbose_name=_('grid'))
     cookies_accept_2: models.TextField(verbose_name=_('Accept cookies 2'))
-    cookies_decline_2: models.TextField(verbose_name=_('Decline cookies 2'))
+    country_2: models.TextField(verbose_name=_('Decline cookies 2'))
+
+class Shop(models.Model):
+    name = models.CharField(max_length=60, verbose_name=_('Shop name'), choices=ShopChoice.choices)
+    url = models.TextField(verbose_name=_('URL'))
+    xpath = models.OneToOneField(to=ShopXPATH, on_delete=models.CASCADE)
 
 
 class ItemSize(models.Model):

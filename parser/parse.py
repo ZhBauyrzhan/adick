@@ -4,7 +4,9 @@ from io import BytesIO
 
 from PIL import Image
 import requests
+from celery import shared_task
 from django.core.files.base import ContentFile
+from rest_framework.generics import get_object_or_404
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -136,6 +138,12 @@ class Parser:
 
     @staticmethod
     def _get_grid_links(url: str, xpath: dict) -> list:
+        '''Тут я изменил в бд цену на 200, а потом проверил, что если он спарсит эти же кросы, то цену поменяет'''
+        # return [ (
+        #     'https://www.nike.com/t/air-force-1-07-mens-shoes-jBrhbr/CW2288-111',
+        #     Decimal(100),
+        #     '$'
+        # ), ]
         with Parser.setup_driver(url) as driver:
             screen_height = screen_height = driver.execute_script("return window.screen.height;")
 
@@ -166,8 +174,11 @@ class Parser:
                 time.sleep(5)
             items = list(set(items))
             return items
+
     @staticmethod
     def parse_item_grid(url: str, xpath: dict, shop: Shop):
+        # shop = get_object_or_404(Shop, name=shop_name)
+
         items = Parser._get_grid_links(url, xpath)
         # print(links)
         cnt = 0
@@ -184,7 +195,6 @@ class Parser:
             if cnt == 1:
                 break
             cnt += 1
-
     @staticmethod
     def scroll_page(driver: Chrome, screen_height, i):
         driver.execute_script("window.scrollTo(0, {screen_height}*{i});".format(screen_height=screen_height, i=i))

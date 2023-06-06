@@ -14,6 +14,7 @@ from pathlib import Path
 
 import dj_database_url
 import environ
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +30,7 @@ SECRET_KEY = 'django-insecure-o0kjjc!-cb!#z@&kl@8q5!f0z%2xv5^s@$z^qvc519o9hcx3s$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', 'localhost', '0.0.0.0',]
+ALLOWED_HOSTS = ['*', 'localhost', '0.0.0.0']
 
 
 # Application definition
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_celery_beat',
     'channels',
     'parser',
     'users',
@@ -98,7 +100,7 @@ DATABASES = {
     }
 }
 
-ALLOWED_HOSTS = ['localhost']
+# ALLOWED_HOSTS = ['localhost']
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -190,3 +192,27 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+
+CELERY_TIMEZONE = 'Asia/Almaty'
+CELERY_ENABLE_UTC = False
+
+
+TIME_ZONE = 'Asia/Almaty'
+USE_TZ = True
+
+TIME_ZONE = 'Asia/Almaty'
+
+CELERY_BEAT_SCHEDULE = {
+    'task-number-one': {
+        'task': 'parser.tasks.start_parser',
+        'schedule': crontab(hour=15, minute=15),
+        'args': ('https://www.nike.com/w/mens-shoes-nik1zy7ok', 'nike')
+    }
+}

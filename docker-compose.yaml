@@ -33,7 +33,8 @@ services:
       - "6543:5432"
   redis:
     image: redis:7.0
-
+    ports:
+      - "6379:6379"
   chrome:
     image: selenium/node-chrome:dev
     shm_size: 2gb
