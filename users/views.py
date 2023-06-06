@@ -1,8 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import ViewSet, ModelViewSet
 from . import services, serializers
+from .models import UserItems
 
 
 class UserViewSet(ViewSet):
@@ -41,3 +42,9 @@ class UserViewSet(ViewSet):
         elif self.action == 'list':
             permission_classes = [IsAdminUser]
         return [permission() for permission in permission_classes]
+
+
+class UserItemsViewSet(ModelViewSet):
+    serializer_class = serializers.UserItemsSerializer
+    queryset = UserItems.objects.all()
+    permission_classes = IsAuthenticated, IsAdminUser

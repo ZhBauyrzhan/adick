@@ -20,21 +20,25 @@ class Item(models.Model):
 
 
 class ShopXPATH(models.Model):
-    photos: models.TextField(verbose_name=_('Photo'))
-    size: models.TextField(verbose_name=_('Size'))
-    cookies_accept: models.TextField(verbose_name=_('Accept cookies'))
-    cookies_decline: models.TextField(verbose_name=_('Decline cookies'))
-    item_name: models.TextField(verbose_name=_('Item name'))
-    price: models.TextField(verbose_name=_('Price'))
-    country: models.TextField(verbose_name=_('Country'))
-    grid: models.TextField(verbose_name=_('grid'))
-    cookies_accept_2: models.TextField(verbose_name=_('Accept cookies 2'))
-    country_2: models.TextField(verbose_name=_('Decline cookies 2'))
+    photos = models.TextField(verbose_name=_('Photo'), default="")
+    size = models.TextField(verbose_name=_('Size'), default="")
+    cookies_accept = models.TextField(verbose_name=_('Accept cookies'), default="")
+    cookies_decline = models.TextField(verbose_name=_('Decline cookies'), default="")
+    item_name = models.TextField(verbose_name=_('Item name'), default="")
+    price = models.TextField(verbose_name=_('Price'), default="")
+    country = models.TextField(verbose_name=_('Country'), default="")
+    grid = models.TextField(verbose_name=_('grid'), default="")
+    cookies_accept_2 = models.TextField(verbose_name=_('Accept cookies 2'), default="")
+    country_2 = models.TextField(verbose_name=_('Decline cookies 2'), default="")
+
+    def __str__(self):
+        print(f'{self.photos=}, {self.grid=}')
+
 
 class Shop(models.Model):
     name = models.CharField(max_length=60, verbose_name=_('Shop name'), choices=ShopChoice.choices)
     url = models.TextField(verbose_name=_('URL'))
-    xpath = models.OneToOneField(to=ShopXPATH, on_delete=models.CASCADE)
+    xpath = models.OneToOneField(to=ShopXPATH, on_delete=models.CASCADE, blank=True, null=True)
 
 
 class ItemSize(models.Model):
