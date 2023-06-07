@@ -26,7 +26,9 @@ class ParserView(ViewSet):
     parser = Parser()
 
     xpath_nike = {
+
         'photos': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[1]/div""",
+                """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[4]/form/div[1]/fieldset/div"""
         'size': """/html/body/div[4]/div/div/div[2]/div/div[4]/div[2]/div[2]/div/div/div[3]/form/div[1]/fieldset/div""",
         'accept': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[1]""",
         'decline': """/html/body/div[7]/div/div/div/div/div/section/div[2]/div/button[2]""",

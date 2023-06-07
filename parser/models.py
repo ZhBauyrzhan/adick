@@ -30,7 +30,7 @@ class ShopXPATH(models.Model):
     grid = models.TextField(verbose_name=_('grid'), default="")
     cookies_accept_2 = models.TextField(verbose_name=_('Accept cookies 2'), default="")
     country_2 = models.TextField(verbose_name=_('Decline cookies 2'), default="")
-
+    size_2 = models.TextField(verbose_name=_('Size 2'), default="")
     def __str__(self):
         print(f'{self.photos=}, {self.grid=}')
 

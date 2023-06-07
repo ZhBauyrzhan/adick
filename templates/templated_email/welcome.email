@@ -2,7 +2,7 @@
 {% block plain %}
 
   You just signed up for my website, using:
-      username: {{name}}
+      username: {{username}}
 
   Thanks, you rock!
 {% endblock %}

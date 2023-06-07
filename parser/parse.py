@@ -64,13 +64,11 @@ class Parser:
     @staticmethod
     def _parse_name(driver: Chrome, xpath: str) -> str:
         name = driver.find_element(by=By.XPATH, value=xpath).text
-        print(name)
         return name
 
     @staticmethod
     def _parse_price(driver: Chrome, xpath: str) -> str:
         price = driver.find_element(by=By.XPATH, value=xpath).text
-        print(price)
         return price
 
     @staticmethod
@@ -108,17 +106,29 @@ class Parser:
                 Parser._cookies(driver=driver, xpath=xpath['accept'])
                 time.sleep(20)
                 title = Parser._parse_name(driver=driver, xpath=xpath['name'])
+                print(title)
                 price_with_currency = Parser._parse_price(driver=driver, xpath=xpath['price'])
+                print(price_with_currency)
                 currency = price_with_currency[0]
                 price = Decimal(price_with_currency[1:])
-
+                sizes = []
+                try:
+                    sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
+                except Exception as e:
+                    print('No size 1')
+                if len(sizes) == 0:
+                    try:
+                        sizes = Parser._parse_size(driver=driver, xpath=xpath['size2'])
+                    except Exception as e:
+                        print('No size 2')
+                print(sizes)
                 images = Parser._parse_photos(driver=driver, xpath=xpath['photos'])
+                print(len(images))
                 # try:
                 #     for i in images:
                 #         i.show()
                 # except Exception as e:
                 #     print(e)
-                sizes = Parser._parse_size(driver=driver, xpath=xpath['size'])
                 Parser._save_item(url, title, currency, price, images, sizes, shop)
             except Exception as e:
                 print(e, url)
@@ -181,9 +191,10 @@ class Parser:
 
         items = Parser._get_grid_links(url, xpath)
         # print(links)
-        cnt = 0
+        # cnt = 0
         for item in items:
             item_url = item[0]
+            print(item_url)
             price = item[1]
             currency = item[2]
             if not Item.objects.filter(url=item_url).exists():
@@ -192,9 +203,9 @@ class Parser:
                 item_db = Item.objects.get(url=item_url)
                 item_db.price = price
                 item_db.save()
-            if cnt == 1:
-                break
-            cnt += 1
+            # if cnt == 1:
+            #     break
+            # cnt += 1
     @staticmethod
     def scroll_page(driver: Chrome, screen_height, i):
         driver.execute_script("window.scrollTo(0, {screen_height}*{i});".format(screen_height=screen_height, i=i))
