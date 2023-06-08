@@ -9,15 +9,16 @@ class Item(models.Model):
     price = models.DecimalField(verbose_name=_('Price'), max_digits=9, decimal_places=2)
     currency = models.CharField(max_length=5, choices=CurrencyChoice.choices, blank=True)
     shop = models.ForeignKey(to='Shop', verbose_name=_('Shop'), on_delete=models.PROTECT)
-
     url = models.TextField(unique=True, verbose_name=_('URL'))
-
     size = models.ManyToManyField(to='ItemSize')
+    is_changed = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = _('Shoes')
-        verbose_name_plural = _('Shoes')
+        verbose_name = _('Item')
+        verbose_name_plural = _('Items')
 
+    def __str__(self):
+        return f'{self.title=} {self.price} {self.is_changed}'
 
 class ShopXPATH(models.Model):
     photos = models.TextField(verbose_name=_('Photo'), default="")

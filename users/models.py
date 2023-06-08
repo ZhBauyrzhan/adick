@@ -29,9 +29,14 @@ class CustomUser(AbstractUser):
 class UserItems(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE, related_name=('ui_user'))
-    item = models.ForeignKey(to=Item, on_delete=models.CASCADE, related_name=('ui_item'))
-
-    last_price = models.DecimalField(max_digits=10, decimal_places=2)
+    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+    item = models.ForeignKey(to=Item, on_delete=models.CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("UserItem")
+        verbose_name_plural = _("UserItems")
+
+    def __str__(self):
+        return f"{self.user.email=} {self.item.title=}"

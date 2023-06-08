@@ -202,6 +202,7 @@ class Parser:
             elif Item.objects.get(url=item_url).price.compare(price) != 0 and Item.objects.get(url=item_url).currency == currency:
                 item_db = Item.objects.get(url=item_url)
                 item_db.price = price
+                item_db.is_changed = True
                 item_db.save()
             # if cnt == 1:
             #     break

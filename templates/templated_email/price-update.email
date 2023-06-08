@@ -1,0 +1,8 @@
+{% block subject %}Hello! We found new prices on your favorite items{% endblock %}
+{% block plain %}
+
+  Here is list:
+      {{text}}
+
+  Thanks, you rock!
+{% endblock %}

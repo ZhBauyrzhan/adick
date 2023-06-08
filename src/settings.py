@@ -212,7 +212,10 @@ TIME_ZONE = 'Asia/Almaty'
 CELERY_BEAT_SCHEDULE = {
     'task-number-one': {
         'task': 'parser.tasks.start_parser',
-        'schedule': crontab(hour=15, minute=20),
-        'args': ('https://www.nike.com/w/mens-shoes-nik1zy7ok', 'nike')
+        'schedule': crontab(hour=18, minute=20)
+    },
+    'send-emails': {
+        'task': 'parser.tasks.send_emails',
+        'schedule': crontab(hour=12, minute=5)
     }
 }
